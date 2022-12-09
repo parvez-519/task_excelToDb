@@ -7,6 +7,9 @@ const PDFDocument = require("pdfkit");
 
 const uploadData = async (req, res) => {
   try {
+    // TRANSACTION
+    const trans = await db.transaction();
+
     if (req.file == undefined) {
       return res.status(400).send("Please upload an excel file!");
     }
@@ -81,7 +84,10 @@ const uploadData = async (req, res) => {
         diffColLength != true &&
         isNull === false
       ) {
-        empRepo.bulkCreate(arrayData);
+        empRepo.bulkCreate(arrayData, {
+          transaction: trans,
+        });
+        trans.commit();
         res.status(200).json({
           status: appConst.status.success,
           response: arrayData,
@@ -90,7 +96,7 @@ const uploadData = async (req, res) => {
       }
     });
   } catch (err) {
-    console.log(err);
+    await trans.rollback();
     res.status(400).json({
       status: appConst.status.fail,
       response: null,
@@ -114,9 +120,14 @@ const downloadData = async (req, res) => {
     // CONVERTING TO PDF USING PDFKIT PACKAGE
     let pdfDoc = new PDFDocument();
     pdfDoc.pipe(fs.createWriteStream("SampleDocument.pdf"));
-    pdfDoc.text("Total Rocords in Database is: "+totalRocordsCount+" \nAverage of age is: " +averageAge);
+    pdfDoc.text(
+      "Total Rocords in Database is: " +
+        totalRocordsCount +
+        " \nAverage of age is: " +
+        averageAge
+    );
     pdfDoc.end();
-    
+
     res.status(200).json({
       status: appConst.status.success,
       response: { TotalRocords: totalRocordsCount, AverageAge: averageAge },
