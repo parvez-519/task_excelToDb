@@ -19,6 +19,7 @@
     "mysql2": "^2.3.3",
     "node-basedir": "^1.4.1",
     "path": "^0.12.7",
+    "pdfkit": "^0.13.0",
     "read-excel-file": "^5.5.3",
     "sequelize": "^6.26.0"
   },
