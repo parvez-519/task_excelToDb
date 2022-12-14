@@ -88,21 +88,21 @@ const uploadData = async (req, res) => {
         isNull === false
       ) {
         empRepo.bulkCreate(arrayData);
-        res.status(200).json({
-          status: appConst.status.success,
-          response: arrayData,
-          message: "Uploaded the file successfully: " + req.file.originalname,
-        });
-        // const resp = axios({
-        //   method: "get",
-        //   url: "http://localhost:4000/download",
-        //   status: 200,
-        //   response: res.status(200).json({
-        //     status: appConst.status.success,
-        //     response: null,
-        //     message: "Successfully Created PDF",
-        //   }),
+        // res.status(200).json({
+        //   status: appConst.status.success,
+        //   response: arrayData,
+        //   message: "Uploaded the file successfully: " + req.file.originalname,
         // });
+        const resp = axios({
+          method: "get",
+          url: "http://localhost:4000/download",
+          status: 200,
+          response: res.status(200).json({
+            status: appConst.status.success,
+            response: null,
+            message: "Successfully Created PDF",
+          }),
+        });
       }
     });
   } catch (err) {
