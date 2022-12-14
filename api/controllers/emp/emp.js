@@ -4,11 +4,10 @@ let empRepo = require("../../entities/emp");
 const readXlsxFile = require("read-excel-file/node");
 const fs = require("fs");
 const PDFDocument = require("pdfkit");
-
+const axios = require("axios");
 const uploadData = async (req, res) => {
   try {
     // TRANSACTION
-    const trans = await db.transaction();
 
     if (req.file == undefined) {
       return res.status(400).send("Please upload an excel file!");
@@ -42,7 +41,11 @@ const uploadData = async (req, res) => {
             response: null,
             message: `Failed ! Headers columns lengths are invalid`,
           });
-          break;
+          break;;
+        }
+        // CHECKING FOR ANY EMPTY ROWS
+        if (row[0] === null && row[1] === null) {
+          continue;
         }
         // CHECKING FOR ANY EMPTY CELL
         if (row[0] === null) {
@@ -84,24 +87,29 @@ const uploadData = async (req, res) => {
         diffColLength != true &&
         isNull === false
       ) {
-        empRepo.bulkCreate(arrayData, {
-          transaction: trans,
-        });
-        trans.commit();
+        empRepo.bulkCreate(arrayData);
         res.status(200).json({
           status: appConst.status.success,
           response: arrayData,
           message: "Uploaded the file successfully: " + req.file.originalname,
         });
+        // const resp = axios({
+        //   method: "get",
+        //   url: "http://localhost:4000/download",
+        //   status: 200,
+        //   response: res.status(200).json({
+        //     status: appConst.status.success,
+        //     response: null,
+        //     message: "Successfully Created PDF",
+        //   }),
+        // });
       }
     });
   } catch (err) {
-    await trans.rollback();
     res.status(400).json({
       status: appConst.status.fail,
       response: null,
       message: "Fail to import data into database!",
-      error: err.message,
     });
   }
 };
@@ -134,12 +142,10 @@ const downloadData = async (req, res) => {
       message: "Successfully Created PDF",
     });
   } catch (err) {
-    console.log(err);
     res.status(400).json({
       status: appConst.status.fail,
       response: null,
       message: "Failed to Created PDF",
-      error: err.message,
     });
   }
 };
