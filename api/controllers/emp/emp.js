@@ -41,7 +41,7 @@ const uploadData = async (req, res) => {
             response: null,
             message: `Failed ! Headers columns lengths are invalid`,
           });
-          break;;
+          break;
         }
         // CHECKING FOR ANY EMPTY ROWS
         if (row[0] === null && row[1] === null) {
@@ -96,7 +96,6 @@ const uploadData = async (req, res) => {
         const resp = axios({
           method: "get",
           url: "http://localhost:4000/download",
-          status: 200,
           response: res.status(200).json({
             status: appConst.status.success,
             response: null,
