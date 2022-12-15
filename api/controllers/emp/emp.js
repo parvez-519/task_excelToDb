@@ -7,20 +7,14 @@ const PDFDocument = require("pdfkit");
 const axios = require("axios");
 const uploadData = async (req, res) => {
   try {
-    // TRANSACTION
-
     if (req.file == undefined) {
       return res.status(400).send("Please upload an excel file!");
     }
     let path = req.file.path;
     let arrayData = [];
-    let isEmpty = false;
-    let notString = false;
-    let notNumber = false;
-    let diffColLength = false;
-    let isNull = false;
     let rowsNum = 0;
     var alphabets = /^[A-Za-z]*$/;
+    const errMsg = [];
 
     readXlsxFile(path).then((rows) => {
       // SKIP HEADER
@@ -35,13 +29,9 @@ const uploadData = async (req, res) => {
         var size = Object.keys(arr).length;
         // HEADERS VALIDATION FOR SAME COLUMN SIZE
         if (size != row.length) {
-          diffColLength = true;
-          res.status(400).json({
-            status: appConst.status.fail,
-            response: null,
+          errMsg.push({
             message: `Failed ! Headers columns lengths are invalid`,
           });
-          break;
         }
         // CHECKING FOR ANY EMPTY ROWS
         if (row[0] === null && row[1] === null) {
@@ -49,50 +39,28 @@ const uploadData = async (req, res) => {
         }
         // CHECKING FOR ANY EMPTY CELL
         if (row[0] === null) {
-          isNull = true;
-          res.status(400).json({
-            status: appConst.status.fail,
-            response: null,
+          errMsg.push({
             message: `Failed ! empty cell at row ${rowsNum} and column 1`,
           });
-          break;
         }
         // IF NO EMPTY CELL THEN PERFORM REGEX OPERATION FOR STRING VALIDATION ON NAME COLUMN
         else if (!row[0].match(alphabets)) {
-          notString = true;
-          res.status(400).json({
-            status: appConst.status.fail,
-            response: null,
+          errMsg.push({
             message: `Failed ! Not string at row ${rowsNum} column 1`,
           });
-          break;
         }
         // CHECKING FOR NUMBER VALIDATION ON AGE COLUMN
-        if (typeof row[1] != "number" && isNull === false) {
-          notNumber = true;
-          res.status(400).json({
-            status: appConst.status.fail,
-            response: null,
+        if (typeof row[1] != "number") {
+          errMsg.push({
             message: `Failed ! Not number at row ${rowsNum} column 2`,
           });
-          break;
         }
         arrayData.push(arr);
       }
       // AFTER CHECKING ABOVE ALL SCENERIO SAVE THE DATA TO DB
-      if (
-        isEmpty === false &&
-        notString != true &&
-        notNumber != true &&
-        diffColLength != true &&
-        isNull === false
-      ) {
+      if (errMsg.length === 0) {
         empRepo.bulkCreate(arrayData);
-        // res.status(200).json({
-        //   status: appConst.status.success,
-        //   response: arrayData,
-        //   message: "Uploaded the file successfully: " + req.file.originalname,
-        // });
+
         const resp = axios({
           method: "get",
           url: "http://localhost:4000/download",
@@ -101,6 +69,12 @@ const uploadData = async (req, res) => {
             response: null,
             message: "Successfully Created PDF",
           }),
+        });
+      } else {
+        res.status(400).json({
+          status: appConst.status.fail,
+          response: errMsg,
+          message: null,
         });
       }
     });
